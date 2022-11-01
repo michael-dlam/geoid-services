@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Basic Leaflet Map with GeoJSON and Layer control</title>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+      crossorigin=""
+    />
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script
+      src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+      integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+      crossorigin=""
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-search/3.0.3/leaflet-search.src.js"
+      integrity="sha512-HsHDqbWBSiOrsb1U0cnIaI9UelfHgVECuDy1kFH2qDG86r96+s5cEIDKwr1oOefKnC/2a/caa8Yja1eZjGAqHQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-search/3.0.3/leaflet-search.src.css"
+      integrity="sha512-im9l+yLwl0w9hf9+XlK/lN9za2l2J4SmWpWsQP5IRPPxXtdruhJmTA7/WdQuxJRDVOYiENftSyDxXwxXAXiTtA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <!-- Adding the CND for JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  </head>
+  <body>
+    <h2>A web map of basic services in the student hub</h2>
+
+    <div id="map" style="width: 1100px; height: 550px"></div>
+
+    <script>
+      // Map creation
+      var map = L.map("map").setView(
+        [-25.75020242774029, 28.24000934480132],
+        15
+      );
+
+      // Basemaps and attributions
+
+      osmLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+      //Stadia tiles attribution and URL
+
+      light_URL = "http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
+
+      var lightMap = L.tileLayer(light_URL, {
+        attribution: "&copy; " + osmLink + " Contributors",
+      }).addTo(map);
+
+      //Stamen Terrain attribution and URL
+      var stamen_URL =
+        "http://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}.{ext}";
+
+      var stamenMap = L.tileLayer(
+        "https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.{ext}",
+        {
+          attribution:
+            'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          subdomains: "abcd",
+          ext: "png",
+        }
+      );
+
+      // Satellite imagery attribution
+
+      var Esri_WorldImagery = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          attribution:
+            "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+        }
+      );
+
+      // load data layers from geoserver
+      /*var boundary = L.tileLayer
+              .wms("http://geolive.co.za:8080/geoserver/geoid/wms", {
+                layers: "geoid:Boundary",
+                format: "image/png",
+                transparent: true,
+                attribution: "Awesome data © 2022 University of Pretoria",
+              })
+              .addTo(map);
+
+            /*var bookstore = L.tileLayer.wms("http://geolive.co.za:8080/geoserver/geoid/wms", {
+                    layers: 'geoid:Bookstores',
+                    format: 'image/png',
+                    transparent: true,
+                    attribution: "Awesome data © 2022 University of Pretoria"
+                  }).addTo(map);
+
+                  var itserv = L.tileLayer.wms("http://geolive.co.za:8080/geoserver/geoid/wms", {
+                    layers: 'geoid:IT services',
+                    format: 'image/png',
+                    transparent: true,
+                    attribution: "Awesome data © 2022 University of Pretoria"
+                  }).addTo(map);*/
+
+      // defining group layer for search function
+      let markersLayer = new L.LayerGroup();
+
+      // WFS
+      // specify your root URL...
+      var owsrootUrl = "http://geolive.co.za:8080/geoserver/geoid/ows";
+
+      //CHUNK 1
+      // Bookstores WFS
+      // Defining bookstores parameters
+      var defaultBookstore = {
+        service: "WFS",
+        version: "1.0.0",
+        request: "GetFeature",
+        typeName: "geoid:Bookstores",
+        outputFormat: "text/javascript",
+        format_options: "callback:getJsonBook",
+        SrsName: "EPSG:4326",
+      };
+
+      var parameters_books = L.Util.extend(defaultBookstore);
+      var URL_books = owsrootUrl + L.Util.getParamString(parameters_books);
+
+      // Create an empty layer
+      var bookstoreLayer = null;
+      let bookstoreLayerGroup = new L.LayerGroup().addTo(map);
+
+      // this is the ajax request, we are using the jsonp option
+      var ajax_books = $.ajax({
+        url: URL_books,
+        dataType: "jsonp",
+        jsonpCallback: "getJsonBook",
+
+        //In the event of success...
+        success: function (response) {
+          bookstoreLayer = L.geoJson(response, {
+            pointToLayer: function (feature, latlng) {
+              var bookIcon = L.icon({
+                iconSize: [35, 35],
+                iconAnchor: [13, 27],
+                popupAnchor: [1, -24],
+                iconUrl: "bookstore.png",
+              });
+
+              const popupInfo = `
+              <b>Contact: </b> ${feature.properties.contact} <br>
+              <b>Website: </b> ${feature.properties.website}
+            `;
+
+              let marker = new L.marker(latlng, {
+                title: feature.properties.name,
+              })
+                .setIcon(bookIcon)
+                .bindPopup(popupInfo)
+                .openPopup();
+
+              markersLayer.addLayer(marker);
+              bookstoreLayerGroup.addLayer(marker);
+              // return marker;
+            },
+            onEachFeature: function (feature, featureLayer) {
+              featureLayer.bindTooltip(feature.properties.name);
+            },
+          });
+        },
+      });
+
+      //CHUNK 2
+      // IT services WFS
+
+      // Defining IT services parameters
+      var defaultItserv = {
+        service: "WFS",
+        version: "1.0.0",
+        request: "GetFeature",
+        typeName: "geoid:IT_services",
+        outputFormat: "text/javascript",
+        format_options: "callback:getJsonIT",
+        SrsName: "EPSG:4326",
+      };
+
+      var parameters_it = L.Util.extend(defaultItserv);
+      var URL_it = owsrootUrl + L.Util.getParamString(parameters_it);
+
+      // Create an empty layer
+      var ITLayer = null;
+      let ItLayerGroup = new L.LayerGroup().addTo(map);
+
+      // this is the ajax request, we are using the jsonp option
+      var ajax_it = $.ajax({
+        url: URL_it,
+        dataType: "jsonp",
+        jsonpCallback: "getJsonIT",
+
+        //In the event of success...
+        success: function (response) {
+          ITLayer = L.geoJson(response, {
+            pointToLayer: function (feature, latlng) {
+              var itIcon = L.icon({
+                iconSize: [35, 35],
+                iconAnchor: [13, 27],
+                popupAnchor: [1, -24],
+                iconUrl: "mac.png",
+              });
+
+              const popupInfo = `
+                <b>Contact: </b> ${feature.properties.contact} <br>
+                <b>Website: </b> ${feature.properties.website}
+              `;
+
+              let marker = new L.marker(latlng, {
+                title: feature.properties.name,
+              })
+                .setIcon(itIcon)
+                .bindPopup(popupInfo)
+                .openPopup();
+
+              markersLayer.addLayer(marker);
+              ItLayerGroup.addLayer(marker);
+            },
+            onEachFeature: function (feature, featureLayer) {
+              featureLayer.bindTooltip(feature.properties.name);
+            },
+          });
+        },
+      });
+
+      var controlSearch = new L.Control.Search({
+        position: "topright",
+        layer: markersLayer,
+        initial: false,
+        zoom: 20,
+        marker: false,
+      });
+
+      map.addControl(controlSearch);
+
+      //CHUNK 3
+      // Create a layer control
+      // define basemaps
+      //
+
+      var baseMaps = {
+        Stadia: lightMap,
+        Stamen: stamenMap,
+        Satellite: Esri_WorldImagery,
+      };
+
+      let overlays = {
+        "IT services": ItLayerGroup,
+        Bookstores: bookstoreLayerGroup,
+      };
+
+      var layerControl = L.control.layers(baseMaps, overlays).addTo(map);
+      // Add search bar to map
+
+      // Ask for location
+
+      //navigator.geolocation.getCurrentPosition((position) => {
+      //let coords = L.latLng(
+      //position.coords.latitude,
+      //position.coords.longitude
+      //);
+      //map.flyTo(coords).zoomIn(20);
+      //});
+    </script>
+  </body>
+</html>
