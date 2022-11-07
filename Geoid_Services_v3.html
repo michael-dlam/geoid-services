@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      href="https://fonts.googleapis.com/css?family=Quicksand"
+      rel="stylesheet"
+    />
+
+    <title>Essential student services for academic success</title>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+      crossorigin=""
+    />
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script
+      src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+      integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+      crossorigin=""
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-search/3.0.3/leaflet-search.src.js"
+      integrity="sha512-HsHDqbWBSiOrsb1U0cnIaI9UelfHgVECuDy1kFH2qDG86r96+s5cEIDKwr1oOefKnC/2a/caa8Yja1eZjGAqHQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-search/3.0.3/leaflet-search.src.css"
+      integrity="sha512-im9l+yLwl0w9hf9+XlK/lN9za2l2J4SmWpWsQP5IRPPxXtdruhJmTA7/WdQuxJRDVOYiENftSyDxXwxXAXiTtA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Adding the CND for JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script src="https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js"></script>
+
+    <link rel="stylesheet" href="./leaflet-search/src/leaflet-search.css" />
+    <script src="./leaflet-search/src/leaflet-search.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"
+    />
+    <!-- routing-->
+  </head>
+  <body>
+    <h2>
+      <strong> BASIC ESSENTIAL SERVICES FOR STUDENT SUCCESS </strong>
+    </h2>
+
+    <div id="map" style="height: 80vh"></div>
+    <!-- styling legend and header-->
+    <style>
+      h2 {
+        font-family: "Quicksand";
+      }
+
+      h2 {
+        text-align: center;
+      }
+
+      h2 {
+        margin: 1em 0 0.5em 0;
+        font-size: 50px;
+        font-weight: 600;
+        line-height: 40px;
+        position: relative;
+        padding: 1.5%;
+        font: "Quicksand";
+        color: #3b2901;
+        box-shadow: inset 0 0 0 1px rgba(2, 17, 112, 0.979),
+          inset 0 0 5px rgba(162, 209, 33, 0.5), inset 2000px 0 35px #ccbd98;
+      }
+
+      .legend {
+        position: absolute;
+        bottom: 15px;
+        right: 5px;
+        padding: 1vh;
+        background: #cccabc;
+        line-height: 18px;
+        width: 100px;
+        height: 240px;
+        font: 14px/16px "Quicksand";
+      }
+      .legend p {
+        float: right;
+        margin-right: 25px;
+        color: rgb(5, 5, 5);
+        opacity: 5;
+      }
+
+      .center {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 50%;
+      }
+    </style>
+
+    <script>
+      // Map creation
+      var map = L.map("map").setView(
+        [-25.74871635032017, 28.239870522943328],
+        16
+      );
+
+      // Basemaps and attributions
+
+      // Add brown basemap
+
+      mapBUrl =
+        "https://api.mapbox.com/styles/v1/msimsi-m-19/cla0qzg2d003f14nunum2y21l/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoibXNpbXNpLW0tMTkiLCJhIjoiY2sxZnpzNG81MDBjMDNoazF2YnlucHFraCJ9.pW9x_HEirWrXIMJwg5mz3Q";
+
+      osmLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+      var brownMap = L.tileLayer(mapBUrl).addTo(map);
+
+      // Add dark map
+
+      darkBUrl =
+        "https://api.mapbox.com/styles/v1/msimsi-m-19/cla0xt4ud003y14nun9wh8ig6/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoibXNpbXNpLW0tMTkiLCJhIjoiY2sxZnpzNG81MDBjMDNoazF2YnlucHFraCJ9.pW9x_HEirWrXIMJwg5mz3Q";
+
+      var darkMap = L.tileLayer(darkBUrl);
+
+      // Satellite imagery attribution
+
+      var Esri_WorldImagery = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          attribution:
+            "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+        }
+      );
+
+      // Defining group layer for search function
+      let markersLayer = new L.LayerGroup();
+
+      // WFS
+      // specify your root URL...
+      var owsrootUrl = "http://geolive.co.za:8080/geoserver/geoid/ows";
+
+      // Defining parameters
+      // Defining bookstores parameters
+      var defaultBookstore = {
+        service: "WFS",
+        version: "1.0.0",
+        request: "GetFeature",
+        typeName: "geoid:Bookstores",
+        outputFormat: "text/javascript",
+        format_options: "callback:getJsonBook",
+        SrsName: "EPSG:4326",
+      };
+
+      var parameters_books = L.Util.extend(defaultBookstore);
+      var URL_books = owsrootUrl + L.Util.getParamString(parameters_books);
+
+      // Defining IT services parameters
+      var defaultItserv = {
+        service: "WFS",
+        version: "1.0.0",
+        request: "GetFeature",
+        typeName: "geoid:IT_services",
+        outputFormat: "text/javascript",
+        format_options: "callback:getJsonIT",
+        SrsName: "EPSG:4326",
+      };
+
+      var parameters_it = L.Util.extend(defaultItserv);
+      var URL_it = owsrootUrl + L.Util.getParamString(parameters_it);
+
+      // Create an empty layer for bookstores
+
+      var bookstoreLayer = null;
+      let bookstoreLayerGroup = new L.LayerGroup().addTo(map);
+
+      // Create an empty layer for IT services
+      var ITLayer = null;
+      let ItLayerGroup = new L.LayerGroup().addTo(map);
+
+      // WFS Ajax requests
+
+      // this is the ajax request, we are using the jsonp option. --> BOOKSTORES
+      var ajax_books = $.ajax({
+        url: URL_books,
+        dataType: "jsonp",
+        jsonpCallback: "getJsonBook",
+
+        //In the event of success...
+        success: function (response) {
+          bookstoreLayer = L.geoJson(response, {
+            pointToLayer: function (feature, latlng) {
+              var bookIcon = L.icon({
+                iconSize: [35, 35],
+                iconAnchor: [13, 27],
+                popupAnchor: [1, -24],
+                iconUrl: "bookstore.png",
+              });
+
+              //console.log(feature.properties);
+              var photoImg =
+                '<img src="' +
+                feature.properties.image +
+                '.png" height= 150vh />';
+
+              const popupInfo = `
+                <b>Name: </b>${feature.properties.name} <br>
+                <b>Contact: </b> ${feature.properties.contact} <br>
+                <b>Website: </b> <a href = ${feature.properties.website} target = "_blank"> ${feature.properties.website} </a> <br>
+                <center> <em> <u> <b> Average Daily Busyness (%) </em> </u> </b> </center> <br>
+                <center>${photoImg}</center>
+              `;
+
+              let marker = new L.marker(latlng, {
+                title: feature.properties.name,
+              })
+                .setIcon(bookIcon)
+                .bindPopup(popupInfo)
+                .openPopup();
+
+              markersLayer.addLayer(marker);
+              bookstoreLayerGroup.addLayer(marker);
+              // return marker;
+            },
+            onEachFeature: function (feature, featureLayer) {
+              featureLayer.bindTooltip(feature.properties.name);
+            },
+          });
+        },
+      });
+
+      // IT services WFS
+
+      // this is the ajax request, we are using the jsonp option. --> IT SERVICES
+      var ajax_it = $.ajax({
+        url: URL_it,
+        dataType: "jsonp",
+        jsonpCallback: "getJsonIT",
+
+        //In the event of success...
+        success: function (response) {
+          ITLayer = L.geoJson(response, {
+            pointToLayer: function (feature, latlng) {
+              var itIcon = L.icon({
+                iconSize: [35, 35],
+                iconAnchor: [13, 27],
+                popupAnchor: [1, -24],
+                iconUrl: "mac.png",
+              });
+
+              var photoImg =
+                '<img src="' +
+                feature.properties.image +
+                '.png" height= 150vh/>';
+
+              const popupInfo = `
+                <b>Name: </b>${feature.properties.name} <br>
+                <b>Contact: </b> ${feature.properties.contact} <br>
+                <b>Website: </b> <a href = ${feature.properties.website} target = "_blank">  ${feature.properties.website} </a> <br>
+                <center> <em> <u> <b> Average Daily Busyness (%)  </em> </u> </b></center> <br>
+                <center>${photoImg}</center>
+              `;
+
+              let marker = new L.marker(latlng, {
+                title: feature.properties.name,
+              })
+                .setIcon(itIcon)
+                .bindPopup(popupInfo)
+                .openPopup();
+
+              markersLayer.addLayer(marker);
+              ItLayerGroup.addLayer(marker);
+            },
+            onEachFeature: function (feature, featureLayer) {
+              featureLayer.bindTooltip(feature.properties.name);
+            },
+          });
+        },
+      });
+
+      // Creating a search function
+      var controlSearch = new L.Control.Search({
+        position: "topright",
+        layer: markersLayer,
+        initial: false,
+        zoom: 20,
+        marker: false,
+      });
+
+      map.addControl(controlSearch);
+
+      // Create a layer control
+      // Define basemaps
+
+      var baseMaps = {
+        "Beige Monochrome": brownMap,
+        "Dark Monochrome": darkMap,
+        Satellite: Esri_WorldImagery,
+      };
+
+      let overlays = {
+        "IT services": ItLayerGroup,
+        Bookstores: bookstoreLayerGroup,
+      };
+
+      var layerControl = L.control.layers(baseMaps, overlays).addTo(map);
+
+      //Add legend to map
+      var legend = L.control({ position: "bottomright" });
+
+      legend.onAdd = function (map) {
+        // Create Div Element and Populate it with HTML
+        var div = L.DomUtil.create("div", "legend");
+        div.innerHTML += "<strong> Basic Service </strong>";
+        div.innerHTML +=
+          '<img src="bookstore.png" height = 50vh class = "center "> <p> Bookstore</p>';
+        div.innerHTML +=
+          '<img src="mac.png" height = 50vh class = "center "> <p>IT Store</p>';
+        // Return the Legend div containing the HTML content
+        return div;
+      };
+
+      //Add legend to map
+      legend.addTo(map);
+
+      // Add search bar to map
+
+      // Ask for location
+
+      /*navigator.geolocation.getCurrentPosition((position) => {
+      //let coords = L.latLng(
+      //position.coords.latitude,
+      //position.coords.longitude
+      //);
+      //map.flyTo(coords).zoomIn(20);
+      //});*/
+    </script>
+  </body>
+</html>
